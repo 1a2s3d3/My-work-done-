@@ -4,8 +4,6 @@ from flask_cors import CORS
 import os
 
 app = Flask(__name__)
-
-# Allow requests from frontend
 CORS(app)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -19,60 +17,51 @@ db = SQLAlchemy(app)
 
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), nullable=False)
+    email = db.Column(db.String(200), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
     translation = db.Column(db.String(200), nullable=False)
-    color = db.Column(db.String(20), nullable=False)
+    color = db.Column(db.String(50), nullable=False)
+
+    def __repr__(self):
+        return f"<Order {self.email}>"
 
 
-@app.route("/", methods=["GET"])
+@app.route("/")
 def home():
-    return "Flask server is running"
+    return "Flask backend is running"
 
 
 @app.route("/api/order", methods=["POST"])
 def create_order():
+    data = request.get_json()
+
+    email = data.get("email", "").strip()
+    quantity = data.get("quantity")
+    translation = data.get("translation", "").strip()
+    color = data.get("color", "").strip()
+
+    if not email or not quantity or not translation or not color:
+        return jsonify({"message": "All fields are required"}), 400
+
     try:
-        data = request.get_json(silent=True)
+        quantity = int(quantity)
+    except ValueError:
+        return jsonify({"message": "Quantity must be a valid number"}), 400
 
-        if not data:
-            return jsonify({"message": "No data received"}), 400
+    new_order = Order(
+        email=email,
+        quantity=quantity,
+        translation=translation,
+        color=color
+    )
 
-        email = str(data.get("email", "")).strip()
-        translation = str(data.get("translation", "")).strip()
-        color = str(data.get("color", "")).strip()
-        quantity = data.get("quantity")
+    db.session.add(new_order)
+    db.session.commit()
 
-        if not email or not translation or not color or quantity is None:
-            return jsonify({"message": "All fields are required"}), 400
-
-        try:
-            quantity = int(quantity)
-        except (ValueError, TypeError):
-            return jsonify({"message": "Quantity must be a number"}), 400
-
-        if quantity < 1:
-            return jsonify({"message": "Quantity must be at least 1"}), 400
-
-        new_order = Order(
-            email=email,
-            quantity=quantity,
-            translation=translation,
-            color=color
-        )
-
-        db.session.add(new_order)
-        db.session.commit()
-
-        return jsonify({"message": "Item has been purchased successfully"}), 201
-
-    except Exception as e:
-        print("BACKEND ERROR:", e)
-        return jsonify({"message": "Server error"}), 500
+    return jsonify({"message": "Bible has been purchased successfully"}), 201
 
 
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    app.run(debug=True)
