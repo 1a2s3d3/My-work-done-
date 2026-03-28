@@ -17,4 +17,6 @@ If you are developing a production application, we recommend using TypeScript wi
 
 I used Bootstrap a CSS framework to make this web application responsive, using Bootstrap made it easier for me to make the website responsive.
 
+i used React reusable component to make it easier for the developer to run the code and edit it.
+
 I used python flask to collect data from this website, now all the items being requested can be see by the restaurant.
